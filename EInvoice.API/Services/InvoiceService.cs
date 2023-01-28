@@ -20,9 +20,6 @@ public class InvoiceService : IInvoiceService
 {
     private readonly IAuthService _authService;
 
-    //private readonly IToolkitHandler _toolkitHandler;
-    //private ISignerService _signerService;
-
     private readonly HttpClient _httpClient;
     private readonly ISignerService _signerService;
     private readonly EInvoicingConfiguration _eInvoicingConfiguration;
@@ -35,7 +32,6 @@ public class InvoiceService : IInvoiceService
         _signerService = signerService;
         _mapper = mapper;
         _eInvoicingConfiguration = eInvoicingConfiguration.Value;
-        //_signerService = signerService;
     }
     public async Task<string> CreateInvoice(DocumentRequestDto invoiceRequest)
     {
@@ -44,12 +40,6 @@ public class InvoiceService : IInvoiceService
 
         var headers = new Dictionary<string, string>
         {
-            // { "User-agent", "egyis-erp" },
-            // //{ "User-agent", "Testing Gateway" },
-            //{ "Accept", "**/**" },
-            //{ "Accept-Encoding", "gzip, deflate, br" },
-            //{ "Connection", "keep-alive" },
-            //{ "cache-control", "no-cache" }
         };
 
         var serializer = new DocumentSerializationService();
@@ -90,8 +80,6 @@ public class InvoiceService : IInvoiceService
         var request = new HttpRequestMessage(HttpMethod.Post, $"{_eInvoicingConfiguration.BaseUrl}/{_eInvoicingConfiguration.SubmitUrl}");
 
         invoicesForSubmit.Documents.Add(invoiceForSubmit);
-
-        // serialize settings to camel case
 
         var serializedContent = JsonConvert.SerializeObject(invoicesForSubmit, jsonSettings);
 

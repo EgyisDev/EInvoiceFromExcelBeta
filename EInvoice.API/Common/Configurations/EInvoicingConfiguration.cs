@@ -5,4 +5,6 @@ public class EInvoicingConfiguration
     public string BaseUrl { get; set; }
 
     public string SubmitUrl { get; set; }
+
+    public string TokenPin { get; set; }
 }
