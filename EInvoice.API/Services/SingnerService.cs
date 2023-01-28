@@ -20,7 +20,7 @@ public class SignerService : ISignerService
     private readonly IPkcs11LibraryFactory _factory;
 
     private ApplicationConfiguration _applicationConfiguration;
-    private EInvoicingConfiguration _eInvoicingConfiguration;
+    private readonly EInvoicingConfiguration _eInvoicingConfiguration;
 
     public SignerService(IOptions<ApplicationConfiguration> applicationConfiguration, IPkcs11LibraryFactory factory, IOptions<EInvoicingConfiguration> eInvoicingConfiguration)
     {
@@ -46,7 +46,7 @@ public class SignerService : ISignerService
 
         if (slot is null)
         {
-            return "No slots found";
+            throw new Exception("No slots found");
         }
 
         using var session = slot.OpenSession(SessionType.ReadWrite);
@@ -64,7 +64,7 @@ public class SignerService : ISignerService
 
         if (certificate is null)
         {
-            return "Certificate not found";
+            throw new Exception("Certificate not found");
         }
 
         var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
@@ -73,12 +73,11 @@ public class SignerService : ISignerService
         // find cert by thumbprint
         var foundCerts = store.Certificates.Find(X509FindType.FindByIssuerName, TokenCertificate, false);
 
-        //var foundCerts = store.Certificates.Find(X509FindType.FindBySerialNumber, "2b1cdda84ace68813284519b5fb540c2", true);
-
+        //var foundCerts = store.Certificates.Find(X509FindType.FindBySerialNumber, "520456a1a5d5204b0deabf8bbafb65e4", true);
 
 
         if (foundCerts.Count == 0)
-            return "no device detected";
+            throw new Exception("No device detected");
 
         var certForSigning = foundCerts[0];
         store.Close();
