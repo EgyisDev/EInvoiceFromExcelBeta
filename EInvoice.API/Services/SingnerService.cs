@@ -1,22 +1,23 @@
-using EInvoicing.Processing;
+using EInvoice.Common.Configurations;
+using Microsoft.Extensions.Options;
 using Net.Pkcs11Interop.Common;
 using Net.Pkcs11Interop.HighLevelAPI;
+using Net.Pkcs11Interop.HighLevelAPI.Factories;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Ess;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using EInvoice.Common.Configurations;
-using Microsoft.Extensions.Options;
-using Net.Pkcs11Interop.HighLevelAPI.Factories;
 
 namespace EInvoice.Services;
 
 public class SignerService : ISignerService
 {
     private readonly string DllLibPath = "eps2003csp11.dll";
-    private string TokenPin = "999999999";
+    private string TokenPin = "54731641";
+    //private string TokenPin = "";
     private string TokenCertificate = "Egypt Trust Sealing CA";
 
     private IPkcs11LibraryFactory _factory;
@@ -29,98 +30,84 @@ public class SignerService : ISignerService
         _applicationConfiguration = applicationConfiguration.Value;
     }
 
+    public SignerService()
+    {
+    }
+
     public string SignWithCMS(string serializedJson)
     {
+        byte[] data = Encoding.UTF8.GetBytes(serializedJson);
 
-        //var serializedJsonAsBytes = Encoding.UTF8.GetBytes(serializedJson);
-
-      //var sigature =   DocumentSigning.ComputeSignture(serializedJsonAsBytes).Result;
-
-        ListCertificates();
-
-
-        var factories = new Pkcs11InteropFactories();
-
-        using (var pkcs11Library = _factory.LoadPkcs11Library(factories,DllLibPath, AppType.MultiThreaded))
+        Pkcs11InteropFactories factories = new Pkcs11InteropFactories();
+        
+        using (IPkcs11Library pkcs11Library = factories.Pkcs11LibraryFactory.LoadPkcs11Library(factories, DllLibPath, AppType.MultiThreaded))
         {
-            var slotsWithToken = pkcs11Library.GetSlotList(SlotsType.WithTokenPresent);
-
-            var slot = slotsWithToken.FirstOrDefault();
+            ISlot slot = pkcs11Library.GetSlotList(SlotsType.WithTokenPresent).FirstOrDefault();
 
             if (slot is null)
             {
-                throw new Exception("No slot with token present");
-
                 return "No slots found";
             }
 
-            //var tokenInfo = slot.GetTokenInfo();
-            //var slotInfo = slot.GetSlotInfo();
+            ITokenInfo tokenInfo = slot.GetTokenInfo();
+
+            ISlotInfo slotInfo = slot.GetSlotInfo();
 
 
             using (var session = slot.OpenSession(SessionType.ReadWrite))
             {
 
-                //session.Login(CKU.CKU_USER, Encoding.UTF8.GetBytes("TokenPin"));
                 session.Login(CKU.CKU_USER, Encoding.UTF8.GetBytes(TokenPin));
 
                 var certificateSearchAttributes = new List<IObjectAttribute>()
-                {
-                    session.Factories.ObjectAttributeFactory.Create(CKA.CKA_CLASS, CKO.CKO_CERTIFICATE),
-                    session.Factories.ObjectAttributeFactory.Create(CKA.CKA_TOKEN, true),
-                    session.Factories.ObjectAttributeFactory.Create(CKA.CKA_CERTIFICATE_TYPE, CKC.CKC_X_509)
-                };
+                    {
+                        session.Factories.ObjectAttributeFactory.Create(CKA.CKA_CLASS, CKO.CKO_CERTIFICATE),
+                        session.Factories.ObjectAttributeFactory.Create(CKA.CKA_TOKEN, true),
+                        session.Factories.ObjectAttributeFactory.Create(CKA.CKA_CERTIFICATE_TYPE, CKC.CKC_X_509)
+                    };
 
-                var certificate = session.FindAllObjects(certificateSearchAttributes).FirstOrDefault();
+                IObjectHandle certificate = session.FindAllObjects(certificateSearchAttributes).FirstOrDefault();
 
                 if (certificate is null)
                 {
                     return "Certificate not found";
                 }
 
-                var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+                X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
                 store.Open(OpenFlags.MaxAllowed);
 
                 // find cert by thumbprint
                 var foundCerts = store.Certificates.Find(X509FindType.FindByIssuerName, TokenCertificate, false);
 
-                //X509Certificate2Collection foundCerts;
+                //var foundCerts = store.Certificates.Find(X509FindType.FindBySerialNumber, "2b1cdda84ace68813284519b5fb540c2", true);
 
-                ////if (!_applicationConfiguration.IsProduction)
-                //foundCerts = store.Certificates.Find(X509FindType.FindBySerialNumber,
-                //    "27facef6632e6c8e4e086214cf6c9be6", true);
 
 
                 if (foundCerts.Count == 0)
                     return "no device detected";
 
-                X509Certificate2 certificateForSign = foundCerts[0];
+                var certForSigning = foundCerts[0];
                 store.Close();
 
-                var data = Encoding.UTF8.GetBytes(serializedJson);
-                var content = new ContentInfo(new Oid("1.2.840.113549.1.7.5"), data);
 
-                var cms = new SignedCms(content, true);
-
-                var bouncyCertificate =
-                    new EssCertIDv2(
-                        new Org.BouncyCastle.Asn1.X509.AlgorithmIdentifier(
-                            new DerObjectIdentifier("1.2.840.113549.1.9.16.2.47")),
-                        HashBytes(certificateForSign.RawData));
-
-                var signerCertificateV2 =
-                    new SigningCertificateV2(new EssCertIDv2[] { bouncyCertificate });
+                ContentInfo content = new ContentInfo(new Oid("1.2.840.113549.1.7.5"), data);
 
 
-                var signer = new CmsSigner(certificateForSign)
-                {
-                    DigestAlgorithm = new Oid("2.16.840.1.101.3.4.2.1")
-                };
+                SignedCms cms = new SignedCms(content, true);
+
+                EssCertIDv2 bouncyCertificate = new EssCertIDv2(new Org.BouncyCastle.Asn1.X509.AlgorithmIdentifier(new DerObjectIdentifier("1.2.840.113549.1.9.16.2.47")), this.HashBytes(certForSigning.RawData));
+
+                SigningCertificateV2 signerCertificateV2 = new SigningCertificateV2(new EssCertIDv2[] { bouncyCertificate });
+
+
+                CmsSigner signer = new CmsSigner(certForSigning);
+
+                signer.DigestAlgorithm = new Oid("2.16.840.1.101.3.4.2.1");
+
+
 
                 signer.SignedAttributes.Add(new Pkcs9SigningTime(DateTime.UtcNow));
-
-                signer.SignedAttributes.Add(new AsnEncodedData(new Oid("1.2.840.113549.1.9.16.2.47"),
-                    signerCertificateV2.GetEncoded()));
+                signer.SignedAttributes.Add(new AsnEncodedData(new Oid("1.2.840.113549.1.9.16.2.47"), signerCertificateV2.GetEncoded()));
 
 
                 cms.ComputeSignature(signer);
@@ -129,8 +116,72 @@ public class SignerService : ISignerService
 
                 return Convert.ToBase64String(output);
             }
-
         }
+    }
+
+    public string SignWithCMS2(string serializedJson)
+    {
+
+        //var serializedJsonAsBytes = Encoding.UTF8.GetBytes(serializedJson);
+
+        //var sigature =   DocumentSigning.ComputeSignture(serializedJsonAsBytes).Result;
+
+        ListCertificates();
+
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+
+        var store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+        //var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
+        store.Open(OpenFlags.MaxAllowed);
+
+        // find cert by thumbprint
+        //var foundCerts = store.Certificates.Find(X509FindType.FindByIssuerName, TokenCertificate, false);
+
+        //X509Certificate2Collection foundCerts;
+
+        //if (!_applicationConfiguration.IsProduction)
+        var foundCerts = store.Certificates.Find(X509FindType.FindBySerialNumber, "27facef6632e6c8e4e086214cf6c9be6", true);
+
+
+        if (foundCerts.Count == 0)
+            return "no device detected";
+
+        X509Certificate2 certificateForSign = foundCerts[0];
+        store.Close();
+
+        var data = Encoding.UTF8.GetBytes(serializedJson);
+        var content = new ContentInfo(new Oid("1.2.840.113549.1.7.5"), data);
+
+        var cms = new SignedCms(content, true);
+
+        var bouncyCertificate =
+            new EssCertIDv2(
+                new Org.BouncyCastle.Asn1.X509.AlgorithmIdentifier(
+                    new DerObjectIdentifier("1.2.840.113549.1.9.16.2.47")),
+                HashBytes(certificateForSign.RawData));
+
+        var signerCertificateV2 =
+            new SigningCertificateV2(new EssCertIDv2[] { bouncyCertificate });
+
+
+        var signer = new CmsSigner(certificateForSign)
+        {
+            DigestAlgorithm = new Oid("2.16.840.1.101.3.4.2.1")
+        };
+
+        signer.SignedAttributes.Add(new Pkcs9SigningTime(DateTime.UtcNow));
+
+        signer.SignedAttributes.Add(new AsnEncodedData(new Oid("1.2.840.113549.1.9.16.2.47"),
+            signerCertificateV2.GetEncoded()));
+
+        signer.IncludeOption = X509IncludeOption.EndCertOnly;
+
+        cms.ComputeSignature(signer);
+
+        var output = cms.Encode();
+
+        return Convert.ToBase64String(output);
     }
 
     private byte[] HashBytes(byte[] input)

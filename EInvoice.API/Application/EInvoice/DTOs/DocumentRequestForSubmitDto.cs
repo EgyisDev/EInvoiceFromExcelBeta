@@ -4,8 +4,24 @@ namespace EInvoice.Application.EInvoice.DTOs;
 
 public class DocumentRequestDto
 {
+    public DocumentRequestDto()
+    {
+        Documents = new List<DocumentRequestDocumentForSerializeDto>();
+    }
+
     [JsonPropertyName("documents")]
-    public List<DocumentRequestDocumentDto> Documents { get; set; }
+    public List<DocumentRequestDocumentForSerializeDto> Documents { get; set; }
+}
+
+public class DocumentRequestForSubmitDto
+{
+    public DocumentRequestForSubmitDto()
+    {
+        Documents = new List<DocumentRequestDocumentForSubmitDto>();
+    }
+
+    [JsonPropertyName("documents")]
+    public List<DocumentRequestDocumentForSubmitDto> Documents { get; set; }
 }
 
 public class DocumentRequestAddressDto
@@ -77,8 +93,13 @@ public class DocumentRequestDiscountDto
     public decimal Amount { get; set; }
 }
 
-public class DocumentRequestDocumentDto
+public class DocumentRequestDocumentForSubmitDto
 {
+    public DocumentRequestDocumentForSubmitDto()
+    {
+        Signatures = new List<Signature>();
+    }
+    
     [JsonPropertyName("issuer")]
     public Issuer Issuer { get; set; }
 
@@ -148,6 +169,77 @@ public class DocumentRequestDocumentDto
     [JsonPropertyName("signatures")]
     public List<Signature>? Signatures { get; set; } = new List<Signature>();
 }
+
+
+public class DocumentRequestDocumentForSerializeDto
+{
+    [JsonPropertyName("issuer")]
+    public Issuer Issuer { get; set; }
+
+    [JsonPropertyName("receiver")]
+    public Receiver Receiver { get; set; }
+
+    [JsonPropertyName("documentType")]
+    public string DocumentType { get; set; }
+
+    [JsonPropertyName("documentTypeVersion")]
+    public string DocumentTypeVersion { get; set; }
+
+    [JsonPropertyName("dateTimeIssued")]
+    public DateTime DateTimeIssued { get; set; }
+
+    [JsonPropertyName("taxpayerActivityCode")]
+    public string TaxpayerActivityCode { get; set; }
+
+    [JsonPropertyName("internalID")]
+    public string InternalID { get; set; }
+
+    [JsonPropertyName("purchaseOrderReference")]
+    public string PurchaseOrderReference { get; set; }
+
+    [JsonPropertyName("purchaseOrderDescription")]
+    public string PurchaseOrderDescription { get; set; }
+
+    [JsonPropertyName("salesOrderReference")]
+    public string SalesOrderReference { get; set; }
+
+    [JsonPropertyName("salesOrderDescription")]
+    public string SalesOrderDescription { get; set; }
+
+    [JsonPropertyName("proformaInvoiceNumber")]
+    public string ProformaInvoiceNumber { get; set; }
+
+    [JsonPropertyName("payment")]
+    public Payment Payment { get; set; }
+
+    [JsonPropertyName("delivery")]
+    public DocumentRequestDeliveryDto Delivery { get; set; }
+
+    [JsonPropertyName("invoiceLines")]
+    public List<InvoiceLine> InvoiceLines { get; set; }
+
+    [JsonPropertyName("totalDiscountAmount")]
+    public decimal TotalDiscountAmount { get; set; }
+
+    [JsonPropertyName("totalSalesAmount")]
+    public double TotalSalesAmount { get; set; }
+
+    [JsonPropertyName("netAmount")]
+    public double NetAmount { get; set; }
+
+    [JsonPropertyName("taxTotals")]
+    public List<TaxTotal> TaxTotals { get; set; }
+
+    [JsonPropertyName("totalAmount")]
+    public double TotalAmount { get; set; }
+
+    [JsonPropertyName("extraDiscountAmount")]
+    public decimal ExtraDiscountAmount { get; set; }
+
+    [JsonPropertyName("totalItemsDiscountAmount")]
+    public decimal TotalItemsDiscountAmount { get; set; }
+}
+
 
 public class InvoiceLine
 {

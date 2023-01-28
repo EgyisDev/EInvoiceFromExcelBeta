@@ -5,15 +5,9 @@ namespace EInvoice.API.Services;
 
 public class DocumentSerializationService
 {
-    public string Serialize(string content)
+    public string Serialize(string content, JsonSerializerSettings jsonSettings)
     {
-        var request = JsonConvert.DeserializeObject<JObject>(content, new JsonSerializerSettings()
-        {
-            FloatFormatHandling = FloatFormatHandling.String,
-            FloatParseHandling = FloatParseHandling.Decimal,
-            DateFormatHandling = DateFormatHandling.IsoDateFormat,
-            DateParseHandling = DateParseHandling.None
-        });
+        var request = JsonConvert.DeserializeObject<JObject>(content, jsonSettings);
 
         var canonicalString = Serialize(request);
 
@@ -28,52 +22,47 @@ public class DocumentSerializationService
     private string SerializeToken(JToken request)
     {
         var serialized = "";
+
         if (request.Parent is null)
         {
             SerializeToken(request.First);
         }
         else
         {
-            if (request.GetType() != typeof(JObject))
+            if (request.Type == JTokenType.Property)
             {
-                var name = ((JProperty)request).Name.ToUpper();
-
-                if (request.Type == JTokenType.Property)
+                string name = ((JProperty)request).Name.ToUpper();
+                serialized += "\"" + name + "\"";
+                foreach (var property in request)
                 {
-                    serialized += "\"" + name + "\"";
-                    foreach (var property in request)
+                    if (property.Type == JTokenType.Object)
                     {
-                        if (property.Type == JTokenType.Object)
+                        serialized += SerializeToken(property);
+                    }
+                    if (property.Type == JTokenType.Boolean || property.Type == JTokenType.Integer || property.Type == JTokenType.Float || property.Type == JTokenType.Date)
+                    {
+                        serialized += "\"" + property.Value<string>() + "\"";
+                    }
+                    if (property.Type == JTokenType.String)
+                    {
+                        serialized += JsonConvert.ToString(property.Value<string>());
+                    }
+                    if (property.Type == JTokenType.Array)
+                    {
+                        foreach (var item in property.Children())
                         {
-                            serialized += SerializeToken(property);
-                        }
-                        if (property.Type == JTokenType.Boolean || property.Type == JTokenType.Integer || property.Type == JTokenType.Float || property.Type == JTokenType.Date)
-                        {
-                            serialized += "\"" + property.Value<string>() + "\"";
-                        }
-                        if (property.Type == JTokenType.String)
-                        {
-                            serialized += JsonConvert.ToString(property.Value<string>());
-                        }
-                        if (property.Type == JTokenType.Array)
-                        {
-                            foreach (var item in property.Children())
-                            {
-                                serialized += "\"" + ((JProperty)request).Name.ToUpper() + "\"";
-                                serialized += SerializeToken(item);
-                            }
+                            serialized += "\"" + ((JProperty)request).Name.ToUpper() + "\"";
+                            serialized += SerializeToken(item);
                         }
                     }
                 }
-                
-                // Added to fix "References"
-                if (request.Type == JTokenType.String)
-                {
-                    serialized += JsonConvert.ToString(request.Value<string>());
-                }
+            }
+            // Added to fix "References"
+            if (request.Type == JTokenType.String)
+            {
+                serialized += JsonConvert.ToString(request.Value<string>());
             }
         }
-        
         if (request.Type == JTokenType.Object)
         {
             foreach (var property in request.Children())

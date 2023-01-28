@@ -30,6 +30,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPkcs11LibraryFactory, Pkcs11LibraryFactory>();
 builder.Services.AddScoped<ISignerService, SignerService>();
 
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
+
 
 builder.Services.AddHttpClient();
 
