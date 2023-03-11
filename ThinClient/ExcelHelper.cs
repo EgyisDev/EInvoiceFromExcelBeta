@@ -1,153 +1,201 @@
-﻿using ExcelDataReader;
+﻿using DocumentFormat.OpenXml.Drawing;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
+using ExcelDataReader;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using System.IO.Packaging;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Text.Unicode;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace ThinInvoiceUploaderClient
 {
     internal class ExcelHelper
     {
-        public static DocumentRequestDto ConvertExcelToDocumentRequestDto()
+        public static DocumentRequestDocumentForSerializeDto GetDocument(string filePath)
         {
-            string filePath = "InvoiceSample.xlsx";
-            // Load Excel file
-            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-            var documentRequestDto = new DocumentRequestDto();
+            if (!ValidateExcelSheetColumns(filePath))
+                return null;
 
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
+            var dt = GetExcelDataTable(filePath);
+            var jsonDocument = ConvertExcelDataTableToJson(dt);
+            return JsonConvert.DeserializeObject<DocumentRequestDocumentForSerializeDto>(jsonDocument);
+        }
+
+        public static bool ValidateExcelSheetColumns(string filePath)
+        {
+            var requiredColumns = new[] {
+        "issuer.address.branchID",
+        "issuer.address.country",
+        "issuer.address.governate",
+        "issuer.address.regionCity",
+        "issuer.address.street",
+        "issuer.address.buildingNumber",
+        "issuer.address.postalCode",
+        "issuer.address.floor",
+        "issuer.address.room",
+        "issuer.address.landmark",
+        "issuer.address.additionalInformation",
+        "issuer.type",
+        "issuer.id",
+        "issuer.name",
+        "receiver.address.country",
+        "receiver.address.governate",
+        "receiver.address.regionCity",
+        "receiver.address.street",
+        "receiver.address.buildingNumber",
+        "receiver.address.postalCode",
+        "receiver.address.floor",
+        "receiver.address.room",
+        "receiver.address.landmark",
+        "receiver.address.additionalInformation",
+        "receiver.type",
+        "receiver.id",
+        "receiver.name",
+        "documentType",
+        "documentTypeVersion",
+        "dateTimeIssued",
+        "taxpayerActivityCode",
+        "internalID",
+        "purchaseOrderReference",
+        "purchaseOrderDescription",
+        "salesOrderReference",
+        "salesOrderDescription",
+        "proformaInvoiceNumber",
+        "payment.bankName",
+        "payment.bankAddress",
+        "payment.bankAccountNo",
+        "payment.bankAccountIBAN",
+        "payment.swiftCode",
+        "payment.terms",
+        "delivery.approach",
+        "delivery.packaging",
+        "delivery.dateValidity",
+        "delivery.exportPort",
+        "delivery.grossWeight",
+        "delivery.netWeight",
+        "delivery.terms",
+        "invoiceLines.description",
+        "invoiceLines.itemType",
+        "invoiceLines.itemCode",
+        "invoiceLines.unitType",
+        "invoiceLines.quantity",
+        "invoiceLines.internalCode",
+        "invoiceLines.salesTotal",
+        "invoiceLines.total",
+        "invoiceLines.valueDifference",
+        "invoiceLines.totalTaxableFees",
+        "invoiceLines.netTotal",
+        "invoiceLines.itemsDiscount",
+        "invoiceLines.unitValue.currencySold",
+        "invoiceLines.unitValue.amountEGP",
+        "invoiceLines.discount.rate",
+        "invoiceLines.discount.amount",
+        "invoiceLines.taxableItems.taxType",
+        "invoiceLines.taxableItems.amount",
+        "invoiceLines.taxableItems.subType",
+        "invoiceLines.taxableItems.rate",
+        "totalDiscountAmount",
+        "totalSalesAmount",
+        "netAmount",
+        "taxTotals.taxType",
+        "taxTotals.amount",
+        "totalAmount",
+        "extraDiscountAmount",
+        "totalItemsDiscountAmount"
+    };
+            using (SpreadsheetDocument document = SpreadsheetDocument.Open(filePath, false))
             {
-                using (var reader = ExcelReaderFactory.CreateReader(stream))
-                {
-                    while (reader.Read())
-                    {
-                        var document = new DocumentRequestDocumentForSerializeDto();
-                        document.Issuer = new Issuer();
-                        document.Receiver = new Receiver();
-                        document.Payment = new Payment();
-                        document.Delivery = new DocumentRequestDeliveryDto();
-                        document.InvoiceLines = new List<InvoiceLine>();
-                        document.TaxTotals = new List<TaxTotal>();
+                WorkbookPart workbookPart = document.WorkbookPart;
+                Sheet sheet = workbookPart.Workbook.Descendants<Sheet>().First();
+                WorksheetPart worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id);
 
-                        document.Issuer.Name = reader.GetString(0);
-                        document.Issuer.Id = reader.GetString(1);
-                        document.Issuer.Address = new DocumentRequestAddressDto()
-                        {
-                            AdditionalInformation = reader.GetString(2),
-                            BranchID = reader.GetString(3),
-                            BuildingNumber = reader.GetString(4),
-                            Country = reader.GetString(5),
-                            Floor = reader.GetString(6),
-                            Governate = reader.GetString(7),
-                            Landmark = reader.GetString(8),
-                            PostalCode = reader.GetString(9),
-                            Street = reader.GetString(10),
-                            RegionCity = reader.GetString(11),
-                            Room = reader.GetString(12),
-                        };
+                // Get the header row of the sheet
+                Row headerRow = worksheetPart.Worksheet.Descendants<Row>().First();
 
-                        document.Receiver.Name = reader.GetString(3);
-                        document.Receiver.Id = reader.GetString(4);
-                        document.Receiver.Address = new DocumentRequestAddressDto()
-                        {
-                            AdditionalInformation = reader.GetString(2),
-                            BranchID = reader.GetString(3),
-                            BuildingNumber = reader.GetString(4),
-                            Country = reader.GetString(5),
-                            Floor = reader.GetString(6),
-                            Governate = reader.GetString(7),
-                            Landmark = reader.GetString(8),
-                            PostalCode = reader.GetString(9),
-                            Street = reader.GetString(10),
-                            RegionCity = reader.GetString(11),
-                            Room = reader.GetString(12),
-                        };
+                var columnNames = headerRow.Descendants<Cell>()
+                    .Select(c => GetCellValue(c, workbookPart))
+                    .ToList();
 
-                        document.DocumentType = reader.GetString(6);
-                        document.DocumentTypeVersion = reader.GetString(7);
-                        document.DateTimeIssued = reader.GetDateTime(8);
-                        document.TaxpayerActivityCode = reader.GetString(9);
-                        document.InternalID = reader.GetString(10);
-                        document.PurchaseOrderReference = reader.GetString(11);
-                        document.PurchaseOrderDescription = reader.GetString(12);
-                        document.SalesOrderReference = reader.GetString(13);
-                        document.SalesOrderDescription = reader.GetString(14);
-                        document.ProformaInvoiceNumber = reader.GetString(15);
-
-                        document.Payment = new Payment()
-                        {
-                            BankAccountIBAN = reader.GetString(16),
-                            BankAccountNo = reader.GetString(17),
-                            BankAddress = reader.GetString(18),
-                            BankName = reader.GetString(19),
-                            SwiftCode = reader.GetString(20),
-                            Terms = reader.GetString(21),
-                        };
-
-                        document.Delivery = new DocumentRequestDeliveryDto()
-                        {
-                            Approach = reader.GetString(22),
-                            DateValidity = reader.GetDateTime(23),
-                            ExportPort = reader.GetString(24),
-                            GrossWeight = reader.GetDouble(25),
-                            NetWeight = reader.GetDouble(26),
-                            Packaging = reader.GetString(27),
-                            Terms = reader.GetString(22),
-                        };
-
-                        while (reader.Name != "Invoice Lines")
-                        {
-                            reader.Read();
-                        }
-
-                        reader.Read(); //Skip the header row of Invoice Lines
-
-                        while (reader.Name == "Invoice Lines")
-                        {
-                            var line = new InvoiceLine();
-
-                            line.Description = reader.GetString(1);
-                            line.ItemType = reader.GetString(2);
-                            line.ItemCode = reader.GetString(3);
-                            line.UnitType = reader.GetString(4);
-                            line.Quantity = reader.GetInt32(5);
-                            line.InternalCode = reader.GetString(6);
-                            line.SalesTotal = reader.GetDecimal(7);
-                            line.Total = reader.GetDecimal(8);
-                            line.ValueDifference = reader.GetDecimal(9);
-                            line.TotalTaxableFees = reader.GetDecimal(10);
-                            line.NetTotal = reader.GetDecimal(11);
-                            line.ItemsDiscount = reader.GetDecimal(12);
-                            line.UnitValue = new UnitValue();
-                            line.UnitValue.AmountEGP = reader.GetDouble(13);
-                            line.UnitValue.CurrencySold = reader.GetString(14);
-                            line.Discount = new DocumentRequestDiscountDto
-                            {
-                                Rate = reader.GetInt32(15),
-                                Amount = reader.GetDecimal(16)
-                            };
-
-                            document.InvoiceLines.Add(line);
-
-                            if (!reader.Read())
-                            {
-                                break;
-                            }
-                        }
-
-                        while (reader.Name != "Total")
-                        {
-                            reader.Read();
-                        }
-
-                        document.TotalDiscountAmount = reader.GetDecimal(1);
-                        document.TotalSalesAmount = reader.GetDouble(1);
-                        documentRequestDto.Documents.Add(document);
-                    }
-                }
+                return requiredColumns.All(columnNames.Contains);
             }
-            return documentRequestDto;
+        }
+
+        public static string ConvertExcelDataTableToJson(DataTable dataTable)
+        {
+            var result = new List<Dictionary<string, object>>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                var item = new Dictionary<string, object>();
+
+                foreach (DataColumn column in dataTable.Columns)
+                {
+                    var value = row[column.ColumnName];
+
+                    var keys = column.ColumnName.Split('.');
+                    var nestedObject = item;
+
+                    for (int i = 0; i < keys.Length - 1; i++)
+                    {
+                        var key = keys[i];
+                        if (!nestedObject.ContainsKey(key))
+                        {
+                            nestedObject[key] = new Dictionary<string, object>();
+                        }
+                        nestedObject = (Dictionary<string, object>)nestedObject[key];
+                    }
+
+                    nestedObject[keys.Last()] = value;
+                }
+
+                result.Add(item);
+            }
+
+            return JsonConvert.SerializeObject(result);
+        }
+
+        private static string GetCellValue(Cell cell, WorkbookPart workbookPart)
+        {
+            if (cell == null || cell.CellValue == null)
+                return null;
+            string value = cell.CellValue.InnerText;
+            if (cell.DataType != null && cell.DataType == CellValues.SharedString)
+                value = workbookPart.SharedStringTablePart.SharedStringTable
+                    .Elements<SharedStringItem>().ElementAt(int.Parse(value)).InnerText;
+            return value;
+        }
+        public static DataTable GetExcelDataTable(string fileName)
+        {
+            using (var stream = File.Open(fileName, FileMode.Open, FileAccess.Read))
+            {
+                // Define a custom encoding provider that can handle the Arabic content
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+                // Create the Excel reader with the custom encoding
+                var reader = ExcelReaderFactory.CreateReader(stream, new ExcelReaderConfiguration
+                {
+                    FallbackEncoding = Encoding.GetEncoding("windows-1256")
+                });
+
+                // Read the Excel data into a DataSet
+                var dataSet = reader.AsDataSet(new ExcelDataSetConfiguration
+                {
+                    ConfigureDataTable = _ => new ExcelDataTableConfiguration
+                    {
+                        UseHeaderRow = true
+                    }
+                });
+                // Return the first DataTable in the DataSet
+                return dataSet.Tables[0];
+            }
         }
     }
 }

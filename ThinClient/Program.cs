@@ -2,7 +2,7 @@
 using System.Text;
 using ThinInvoiceUploaderClient;
 
-ExcelHelper.ConvertExcelToDocumentRequestDto();
+ExcelHelper.GetDocument("InvoiceSample.xlsx");
 var invoiceUploader = "https://localhost:7072/InvoiceController";
 
 
