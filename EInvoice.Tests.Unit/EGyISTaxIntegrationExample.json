@@ -1,0 +1,172 @@
+{
+    "documents": [
+        {
+            "issuer": {
+                "address": {
+                    "branchID": "0",
+                    "country": "EG",
+                    "governate": "ElSharkia",
+                    "regionCity": "10th of Ramadan",
+                    "street": "وحده215 مشروع الجوهره مول",
+                    "buildingNumber": "0",
+                    "postalCode": "00000",
+                    "floor": "0",
+                    "room": "",
+                    "landmark": "",
+                    "additionalInformation": ""
+                },
+                "type": "B",
+                "id": "523442742",
+                "name": "محمد رضا محمود محمد الجمل"
+            },
+            "receiver": {
+                "address": {
+                    "country": "EG",
+                    "governate": "Egypt",
+                    "regionCity": "Mufazat al Ismlyah",
+                    "street": "580 Clementina Key",
+                    "buildingNumber": "Bldg. 0",
+                    "postalCode": "68030",
+                    "floor": "1",
+                    "room": "123",
+                    "landmark": "7660 Melody Trail",
+                    "additionalInformation": "beside Townhall"
+                },
+                "type": "B",
+                "id": "313717919",
+                "name": "Receiver"
+            },
+            "documentType": "I",
+            "documentTypeVersion": "1.0",
+            "dateTimeIssued": "2023-03-10T02:04:45Z",
+            "taxpayerActivityCode": "6209",
+            "internalID": "IID1",
+            "purchaseOrderReference": "P-233-A6373",
+            "purchaseOrderDescription": "purchase Order description",
+            "salesOrderReference": "1231",
+            "salesOrderDescription": "Sales Order description",
+            "proformaInvoiceNumber": "SomeValue",
+            "payment": {
+                "bankName": "SomeValue",
+                "bankAddress": "SomeValue",
+                "bankAccountNo": "SomeValue",
+                "bankAccountIBAN": "",
+                "swiftCode": "",
+                "terms": "SomeValue"
+            },
+            "delivery": {
+                "approach": "SomeValue",
+                "packaging": "SomeValue",
+                "dateValidity": "2020-09-28T09:30:10Z",
+                "exportPort": "SomeValue",
+                "grossWeight": 10.50,
+                "netWeight": 20.50,
+                "terms": "SomeValue"
+            },
+            "invoiceLines": [
+                {
+                    "description": "Item 10",
+                    "itemType": "EGS",
+                    "itemCode": "EG-523442742-1",
+                    "unitType": "EA",
+                    "quantity": 1,
+                    "internalCode": "IC0",
+                    "salesTotal": 250.00,
+                    "total": 250.00,
+                    "valueDifference": 0.00,
+                    "totalTaxableFees": 0,
+                    "netTotal": 250,
+                    "itemsDiscount": 0,
+                    "unitValue": {
+                        "currencySold": "EGP",
+                        "amountEGP": 250.00
+                    },
+                    "discount": {
+                        "rate": 0,
+                        "amount": 0
+                    },
+                    "taxableItems": [
+                        {
+                            "taxType": "T1",
+                            "amount": 0,
+                            "subType": "V001",
+                            "rate": 0
+                        }
+                    ]
+                },
+                {
+                    "description": "Item 2.2",
+                    "itemType": "EGS",
+                    "itemCode": "EG-523442742-1",
+                    "unitType": "EA",
+                    "quantity": 1,
+                    "internalCode": "IC0",
+                    "salesTotal": 350.00,
+                    "total": 350.00,
+                    "valueDifference": 0.00,
+                    "totalTaxableFees": 0,
+                    "netTotal": 350,
+                    "itemsDiscount": 0,
+                    "unitValue": {
+                        "currencySold": "EGP",
+                        "amountEGP": 350.00
+                    },
+                    "discount": {
+                        "rate": 0,
+                        "amount": 0
+                    },
+                    "taxableItems": [
+                        {
+                            "taxType": "T1",
+                            "amount": 0,
+                            "subType": "V001",
+                            "rate": 0
+                        }
+                    ]
+                },
+                 {
+                    "description": "Item For test 26",
+                    "itemType": "EGS",
+                    "itemCode": "EG-523442742-1",
+                    "unitType": "EA",
+                    "quantity": 1,
+                    "internalCode": "IC0",
+                    "salesTotal": 100.00,
+                    "total": 100.00,
+                    "valueDifference": 0.00,
+                    "totalTaxableFees": 0,
+                    "netTotal": 100,
+                    "itemsDiscount": 0,
+                    "unitValue": {
+                        "currencySold": "EGP",
+                        "amountEGP": 100.00
+                    },
+                    "discount": {
+                        "rate": 0,
+                        "amount": 0
+                    },
+                    "taxableItems": [
+                        {
+                            "taxType": "T1",
+                            "amount": 0,
+                            "subType": "V001",
+                            "rate": 0
+                        }
+                    ]
+                }
+            ],
+            "totalDiscountAmount": 0,
+            "totalSalesAmount": 700.00,
+            "netAmount": 700.00,
+            "taxTotals": [
+                {
+                    "taxType": "T1",
+                    "amount": 0
+                }
+            ],
+            "totalAmount": 700.00,
+            "extraDiscountAmount": 0,
+            "totalItemsDiscountAmount": 0
+        }
+    ]
+}
