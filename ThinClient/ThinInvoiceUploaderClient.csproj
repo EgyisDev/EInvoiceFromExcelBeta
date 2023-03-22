@@ -12,6 +12,7 @@
     <PackageReference Include="ExcelDataReader" Version="3.7.0-develop00310" />
     <PackageReference Include="ExcelDataReader.DataSet" Version="3.6.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Open-XML-SDK" Version="2.9.1" />
   </ItemGroup>
 
 </Project>
