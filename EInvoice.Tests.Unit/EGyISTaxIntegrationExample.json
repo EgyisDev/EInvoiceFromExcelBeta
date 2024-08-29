@@ -38,7 +38,7 @@
             },
             "documentType": "I",
             "documentTypeVersion": "0.9",
-            "dateTimeIssued": "2023-03-10T02:04:45Z",
+            "dateTimeIssued": "2024-08-29T01:25:45Z",
             "taxpayerActivityCode": "6209",
             "internalID": "IID1",
             "purchaseOrderReference": "P-233-A6373",
@@ -57,7 +57,7 @@
             "delivery": {
                 "approach": "SomeValue",
                 "packaging": "SomeValue",
-                "dateValidity": "2020-09-28T09:30:10Z",
+                "dateValidity": "2024-09-29T09:30:10Z",
                 "exportPort": "SomeValue",
                 "grossWeight": 10.50,
                 "netWeight": 20.50,
@@ -153,18 +153,48 @@
                             "rate": 0
                         }
                     ]
+                },
+                 {
+                    "description": "Item For test 26",
+                    "itemType": "EGS",
+                    "itemCode": "EG-523442742-1",
+                    "unitType": "EA",
+                    "quantity": 1,
+                    "internalCode": "IC0",
+                    "salesTotal": 50.00,
+                    "total": 50.00,
+                    "valueDifference": 0.00,
+                    "totalTaxableFees": 0,
+                    "netTotal": 50,
+                    "itemsDiscount": 0,
+                    "unitValue": {
+                        "currencySold": "EGP",
+                        "amountEGP": 50.00
+                    },
+                    "discount": {
+                        "rate": 0,
+                        "amount": 0
+                    },
+                    "taxableItems": [
+                        {
+                            "taxType": "T1",
+                            "amount": 0,
+                            "subType": "V001",
+                            "rate": 0
+                        }
+                    ]
                 }
             ],
             "totalDiscountAmount": 0,
-            "totalSalesAmount": 700.00,
-            "netAmount": 700.00,
+            "totalSalesAmount": 750.00,
+            "netAmount": 750.00,
             "taxTotals": [
                 {
                     "taxType": "T1",
                     "amount": 0
                 }
             ],
-            "totalAmount": 700.00,
+            "totalAmount": 750.00,
             "extraDiscountAmount": 0,
             "totalItemsDiscountAmount": 0
         }
